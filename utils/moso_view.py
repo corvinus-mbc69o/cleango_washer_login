@@ -115,15 +115,15 @@ def create_admin_view(authenticator, username, name, config):
                             data=convert_df(valid_washes),
                             file_name='valid_washes.csv', mime='text/csv')
     
-    st.markdown("## Mosó statisztika")
-    # count the number of washes per washer
-    washes_per_washer = valid_washes.groupby(['washer_name']).agg(
-        total_commision_price = ('total_commision_price', 'sum'),
-        mosas_db = ('id', 'count'),
-        mosas_bonus_db = ('bonus_mosasszam', 'sum')
-    ).reset_index(drop=False)
+        st.markdown("## Mosó statisztika")
+        # count the number of washes per washer
+        washes_per_washer = valid_washes.groupby(['washer_name']).agg(
+            total_commision_price = ('total_commision_price', 'sum'),
+            mosas_db = ('id', 'count'),
+            mosas_bonus_db = ('bonus_mosasszam', 'sum')
+        ).reset_index(drop=False)
 
-    st.dataframe(washes_per_washer)
+        st.dataframe(washes_per_washer)
         
     st.markdown("## Levonasok")
 

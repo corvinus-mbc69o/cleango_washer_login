@@ -201,7 +201,7 @@ def create_washer_view(authenticator, username, name, config):
         else:
             valid_washes = st.session_state.valid_washes
 
-        st.markdown("## Mosások - Mosó: {}".format())
+        st.markdown("## Mosások - Mosó: {}".format(name))
         valid_washes = format_data_washing_complex_data(valid_washes)
         cols_to_filter = ['washer_name', 'wash_date', 'wash_date_day', 'b2b_b2c_limo', 'mosas_tipus', 'car_category', 'brand_name', 'make_name' , 'plate_number', 'base_wash_commission', 'count_extra', 'extra_commision_price', 'total_commision_price', 'user_id', 'id']
         valid_washes = valid_washes[cols_to_filter]

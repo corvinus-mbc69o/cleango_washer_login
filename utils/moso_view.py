@@ -137,15 +137,16 @@ def create_admin_view(authenticator, username, name, config):
 
     # add record to the table
     st.markdown("## Levonas hozzaadasa")
+    washer_names = valid_washes['washer_name'].unique()
+    washer_names = np.insert(washer_names, 0, 'Select a washer')
+    created_at = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    today = pd.to_datetime(datetime.today().strftime('%Y-%m-%d'))
     with st.form(key='add_deduction'):
-        created_at = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
-            washer_names = valid_washes['washer_name'].unique()
-            washer_names = np.insert(washer_names, 0, 'Select a washer')
             washer_name = st.selectbox('Washer Name', washer_names)
         with col2:
-            date_of_deduction = st.date_input('Date of deduction', value=pd.to_datetime(datetime.today().strftime('%Y-%m-%d')))
+            date_of_deduction = st.date_input('Date of deduction', value=today)
         with col3:
             value = st.number_input('Value', value=0)
         

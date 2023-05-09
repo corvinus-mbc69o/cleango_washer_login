@@ -8,6 +8,8 @@ import yaml
 from yaml.loader import SafeLoader
 from PIL import Image
 from datetime import datetime
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def add_picture_to_streamlit(image_path, caption = None):
     image = Image.open(image_path)

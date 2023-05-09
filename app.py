@@ -11,6 +11,8 @@ from utils.moso_view import *
 import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 #set streamlit page name
 st.set_page_config(page_title='CleanGo - B2B Rendelő felület', page_icon='data/cleango-logo-small.png', layout='wide')

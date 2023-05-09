@@ -96,24 +96,24 @@ def create_admin_view(authenticator, username, name, config):
             valid_washes = valid_washes[valid_washes['washer_name'].isin(washer_names)]
         valid_washes = valid_washes[(valid_washes['wash_date'] >= pd.to_datetime(date_from)) & (valid_washes['wash_date'] <= pd.to_datetime(date_to))]
 
-    # get bonus mosasszam
-    bonus_sql_query = "SELECT name, type, bonus_mosasszam FROM cleango.bi_bonus_mosasszam"
-    bonus_mosasszam_df = sql_query(bonus_sql_query)
-    # rename type column to wash_type and name to mosas_tipus
-    bonus_mosasszam_df = bonus_mosasszam_df.rename(columns={'type': 'wash_type', 'name': 'mosas_tipus'})
-    # merge bonus mosasszam wih valid_washes
-    valid_washes = valid_washes.merge(bonus_mosasszam_df, how='left', left_on=['mosas_tipus', 'wash_type'], right_on=['mosas_tipus', 'wash_type'])
+        # get bonus mosasszam
+        bonus_sql_query = "SELECT name, type, bonus_mosasszam FROM cleango.bi_bonus_mosasszam"
+        bonus_mosasszam_df = sql_query(bonus_sql_query)
+        # rename type column to wash_type and name to mosas_tipus
+        bonus_mosasszam_df = bonus_mosasszam_df.rename(columns={'type': 'wash_type', 'name': 'mosas_tipus'})
+        # merge bonus mosasszam wih valid_washes
+        valid_washes = valid_washes.merge(bonus_mosasszam_df, how='left', left_on=['mosas_tipus', 'wash_type'], right_on=['mosas_tipus', 'wash_type'])
 
-    st.dataframe(valid_washes)
-    # total number of washes
-    st.markdown("Összes mosás száma: {}".format(valid_washes.shape[0]))
-    # total number of bonus washes
-    st.markdown("Összes bonus mosás száma: {}".format(round(valid_washes['bonus_mosasszam'].sum())))
-    # total commission
-    st.markdown("Összes jutalék: {} Ft".format(round(valid_washes['total_commision_price'].sum())))
-    st.download_button(label="Download data as CSV",
-                        data=convert_df(valid_washes),
-                        file_name='valid_washes.csv', mime='text/csv')
+        st.dataframe(valid_washes)
+        # total number of washes
+        st.markdown("Összes mosás száma: {}".format(valid_washes.shape[0]))
+        # total number of bonus washes
+        st.markdown("Összes bonus mosás száma: {}".format(round(valid_washes['bonus_mosasszam'].sum())))
+        # total commission
+        st.markdown("Összes jutalék: {} Ft".format(round(valid_washes['total_commision_price'].sum())))
+        st.download_button(label="Download data as CSV",
+                            data=convert_df(valid_washes),
+                            file_name='valid_washes.csv', mime='text/csv')
     
     st.markdown("## Mosó statisztika")
     # count the number of washes per washer

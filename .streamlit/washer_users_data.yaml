@@ -1,0 +1,21 @@
+credentials:
+  usernames:
+    admin:
+      email: info@cleango.hu
+      name: Cleango Admin
+      password: "$2b$12$DKQ5iTeSggZN7VaI5smNUexXZ8RNUjkUFwywxxytGCbxOIfF0WeaG"
+      moso_db_name: "admin felhasznalo"
+    peto_sandor: #username, ezzel lehet bejelentkezni
+      email: ps@ps.hu #random, nem szamit
+      name: "Pető Sándor" # a moso neve
+      password: "$2b$12$HHlz6RjxGUCzbweIU7Xe4uomzlNvLzmJgOnK4czwwM9bwNkZDXSVS" #hased password
+      moso_db_name: "Pető Sándor EV" # ez ami a moso neve a DB-ben
+      
+    
+cookie:
+  expiry_days: 0
+  key: random_signature_key_abc # Must be string
+  name: random_cookie_name
+preauthorized:
+  emails:
+  - random@gmailproba.com

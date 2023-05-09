@@ -339,5 +339,5 @@ def create_washer_view(authenticator, username, name, config):
         st.markdown("Összes levonás: {} Ft".format(round(total_deduction), 2))
         st.markdown('Ha ez az összeg negatív, akkor a kivalasztott időszakban valamiért levonást kaptál. Ha pozitiv, akkor pedig a CleanGo tartozik neked ekkora összegget.')
         st.markdown('***')
-        st.markdown("## Jutalek + Levonas")
+        st.markdown("## Jutalek és Levonás összegezve")
         st.markdown("Összes jutalék - Összes levonás: {} Ft".format(round(valid_washes['total_commision_price'].sum() +total_deduction, 2)))

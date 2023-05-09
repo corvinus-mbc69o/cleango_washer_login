@@ -8,6 +8,7 @@ import yaml
 from yaml.loader import SafeLoader
 from PIL import Image
 from datetime import datetime
+import time
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -60,7 +61,7 @@ def create_admin_view(authenticator, username, name, config):
 
     st.markdown("## Mosások")
     valid_washes = format_data_washing_complex_data(valid_washes)
-    cols_to_filter = ['washer_name', 'wash_date', 'wash_date_day', 'b2b_b2c_limo', 'mosas_tipus', 'car_category', 'brand_name', 'make_name' , 'plate_number', 'base_wash_commission', 'count_extra', 'extra_commision_price', 'total_commision_price', 'user_id', 'id']
+    cols_to_filter = ['washer_name', 'wash_date', 'wash_date_day', 'b2b_b2c_limo', 'mosas_tipus', 'wash_type', 'car_category', 'brand_name', 'make_name' , 'plate_number', 'base_wash_commission', 'count_extra', 'extra_commision_price', 'total_commision_price', 'user_id', 'id']
     valid_washes = valid_washes[cols_to_filter]
 
     valid_washes['wash_date'] = pd.to_datetime(valid_washes['wash_date'])
@@ -93,9 +94,19 @@ def create_admin_view(authenticator, username, name, config):
             valid_washes = valid_washes[valid_washes['washer_name'].isin(washer_names)]
         valid_washes = valid_washes[(valid_washes['wash_date'] >= pd.to_datetime(date_from)) & (valid_washes['wash_date'] <= pd.to_datetime(date_to))]
 
+        # get bonus mosasszam
+        bonus_sql_query = "SELECT name, type, bonus_mosasszam FROM cleango.bi_bonus_mosasszam"
+        bonus_mosasszam_df = sql_query(bonus_sql_query)
+        # rename type column to wash_type and name to mosas_tipus
+        bonus_mosasszam_df = bonus_mosasszam_df.rename(columns={'type': 'wash_type', 'name': 'mosas_tipus'})
+        # merge bonus mosasszam wih valid_washes
+        valid_washes = valid_washes.merge(bonus_mosasszam_df, how='left', left_on=['mosas_tipus', 'wash_type'], right_on=['mosas_tipus', 'wash_type'])
+
         st.dataframe(valid_washes)
         # total number of washes
         st.markdown("Összes mosás száma: {}".format(valid_washes.shape[0]))
+        # total number of bonus washes
+        st.markdown("Összes bonus mosás száma: {}".format(round(valid_washes['bonus_mosasszam'].sum())))
         # total commission
         st.markdown("Összes jutalék: {} Ft".format(round(valid_washes['total_commision_price'].sum())))
         st.download_button(label="Download data as CSV",
@@ -171,6 +182,62 @@ def create_admin_view(authenticator, username, name, config):
             st.write(query_to_delete)
             st.write('Deduction deleted successfully')
 
+    st.markdown("## Bonus mosaszam frissitese")
+    show_bonus_table = st.checkbox('Show bonus mosaszam table', value=False)
+    if show_bonus_table:
+        bonus_sql_query = "SELECT * FROM cleango.bi_bonus_mosasszam"
+        bonus_data = sql_query(bonus_sql_query)
+        st.dataframe(bonus_data)
+        st.download_button(label="Download data as CSV",
+                        data=convert_df(bonus_data),
+                        file_name='bonus_data.csv', mime='text/csv')
+
+    with st.form(key='update_bonus_wash_count'):
+        # upload a csv_file that contains the bonus mosaszam data
+        uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+        update_bonus_wash = st.form_submit_button('Update Bonus Wash Count')
+
+    if update_bonus_wash:
+        # check that the uploaded file is not empty
+        if uploaded_file is None:
+            st.write('Please upload a file')
+        else:
+            # check that the uploaded file has the correct columns
+            columns_to_check = ['name', 'type', 'bonus_mosasszam']
+            df_bonus = pd.read_csv(uploaded_file)
+            # there is a delated_at column
+            if 'deleted_at' in df_bonus.columns:
+                df_bonus = df_bonus.drop(['deleted_at'], axis=1)
+            if not set(columns_to_check).issubset(df_bonus.columns):
+                st.write('Please upload a file that contains the following columns: {}'.format(columns_to_check))
+            else:
+                # delete the table called: cleango.bi_bonus_mosasszam
+                query_to_delete = "DELETE FROM cleango.bi_bonus_mosasszam where id > 0"
+                conn = create_connection()
+                cursor = conn.cursor()
+                cursor.execute(query_to_delete)
+                conn.commit()
+                cursor.close()
+                conn.close()
+                st.write(query_to_delete)
+                st.write('Table deleted successfully')
+
+                # sleep for 5 seconds
+                time.sleep(30)
+                # update the table with the new data
+                created_at = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+                for index, row in df_bonus.iterrows():
+                    query_to_insert = "INSERT INTO cleango.bi_bonus_mosasszam (name, type, bonus_mosasszam, created_at) VALUES ('{}', '{}', '{}', '{}')".format(row['name'], row['type'], row['bonus_mosasszam'], created_at)
+                    st.write(query_to_insert)
+                    conn = create_connection()
+                    cursor = conn.cursor()
+                    cursor.execute(query_to_insert)
+                    conn.commit()
+                    cursor.close()
+                    conn.close()
+                
+
+
 def create_washer_view(authenticator, username, name, config):
 
     col1, col2 = st.columns([8, 1])
@@ -201,10 +268,20 @@ def create_washer_view(authenticator, username, name, config):
         else:
             valid_washes = st.session_state.valid_washes
 
+
         st.markdown("## Mosások - Mosó: {}".format(name))
         valid_washes = format_data_washing_complex_data(valid_washes)
-        cols_to_filter = ['washer_name', 'wash_date', 'wash_date_day', 'b2b_b2c_limo', 'mosas_tipus', 'car_category', 'brand_name', 'make_name' , 'plate_number', 'base_wash_commission', 'count_extra', 'extra_commision_price', 'total_commision_price', 'user_id', 'id']
+        cols_to_filter = ['washer_name', 'wash_date', 'wash_date_day', 'b2b_b2c_limo', 'mosas_tipus', 'wash_type', 'car_category', 'brand_name', 'make_name' , 'plate_number', 'base_wash_commission', 'count_extra', 'extra_commision_price', 'total_commision_price', 'user_id', 'id']
         valid_washes = valid_washes[cols_to_filter]
+
+         # get bonus mosasszam
+        bonus_sql_query = "SELECT name, type, bonus_mosasszam FROM cleango.bi_bonus_mosasszam"
+        bonus_mosasszam_df = sql_query(bonus_sql_query)
+        # rename type column to wash_type and name to mosas_tipus
+        bonus_mosasszam_df = bonus_mosasszam_df.rename(columns={'type': 'wash_type', 'name': 'mosas_tipus'})
+        # merge bonus mosasszam wih valid_washes
+        valid_washes = valid_washes.merge(bonus_mosasszam_df, how='left', left_on=['mosas_tipus', 'wash_type'], right_on=['mosas_tipus', 'wash_type'])
+
 
         valid_washes['wash_date'] = pd.to_datetime(valid_washes['wash_date'])
         valid_washes['wash_date_day'] = pd.to_datetime(valid_washes['wash_date_day'])
@@ -225,7 +302,7 @@ def create_washer_view(authenticator, username, name, config):
 
         with col2:
             # total number of washes
-            st.markdown("Összes mosás száma: {}".format(valid_washes.shape[0]))
+            st.markdown("Összes mosás száma bonus szerint: {}".format(round(valid_washes['bonus_mosasszam'].sum())))
         
         with col1:
             st.download_button(label="Adat letöltése",

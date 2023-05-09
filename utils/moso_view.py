@@ -329,6 +329,7 @@ def create_washer_view(authenticator, username, name, config):
 
         deductions_sql_query = "SELECT * FROM cleango.bi_moso_levonas"
         deductions_data = sql_query(deductions_sql_query)
+        deductions_data['date'] = pd.to_datetime(deductions_data['date'])
         deductions_data = deductions_data[(deductions_data['date'] >= pd.to_datetime(date_from)) & (deductions_data['date'] <= pd.to_datetime(date_to))]
         deductions_data = deductions_data[deductions_data['washer_name'].isin([config['credentials']['usernames'][username]['moso_db_name']])]
         

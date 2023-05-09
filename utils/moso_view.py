@@ -78,6 +78,8 @@ def create_admin_view(authenticator, username, name, config):
         with col2:
             # create a date filter called "date_to" set value to today
             date_to = st.date_input('End Date', value=pd.to_datetime(datetime.today().strftime('%Y-%m-%d')))
+            # add one day to the date_to
+            date_to = date_to + pd.DateOffset(days=1)
         with col3:
             # create a filter with washer_names multislect
             washer_names = valid_washes['washer_name'].unique()
@@ -94,24 +96,34 @@ def create_admin_view(authenticator, username, name, config):
             valid_washes = valid_washes[valid_washes['washer_name'].isin(washer_names)]
         valid_washes = valid_washes[(valid_washes['wash_date'] >= pd.to_datetime(date_from)) & (valid_washes['wash_date'] <= pd.to_datetime(date_to))]
 
-        # get bonus mosasszam
-        bonus_sql_query = "SELECT name, type, bonus_mosasszam FROM cleango.bi_bonus_mosasszam"
-        bonus_mosasszam_df = sql_query(bonus_sql_query)
-        # rename type column to wash_type and name to mosas_tipus
-        bonus_mosasszam_df = bonus_mosasszam_df.rename(columns={'type': 'wash_type', 'name': 'mosas_tipus'})
-        # merge bonus mosasszam wih valid_washes
-        valid_washes = valid_washes.merge(bonus_mosasszam_df, how='left', left_on=['mosas_tipus', 'wash_type'], right_on=['mosas_tipus', 'wash_type'])
+    # get bonus mosasszam
+    bonus_sql_query = "SELECT name, type, bonus_mosasszam FROM cleango.bi_bonus_mosasszam"
+    bonus_mosasszam_df = sql_query(bonus_sql_query)
+    # rename type column to wash_type and name to mosas_tipus
+    bonus_mosasszam_df = bonus_mosasszam_df.rename(columns={'type': 'wash_type', 'name': 'mosas_tipus'})
+    # merge bonus mosasszam wih valid_washes
+    valid_washes = valid_washes.merge(bonus_mosasszam_df, how='left', left_on=['mosas_tipus', 'wash_type'], right_on=['mosas_tipus', 'wash_type'])
 
-        st.dataframe(valid_washes)
-        # total number of washes
-        st.markdown("Összes mosás száma: {}".format(valid_washes.shape[0]))
-        # total number of bonus washes
-        st.markdown("Összes bonus mosás száma: {}".format(round(valid_washes['bonus_mosasszam'].sum())))
-        # total commission
-        st.markdown("Összes jutalék: {} Ft".format(round(valid_washes['total_commision_price'].sum())))
-        st.download_button(label="Download data as CSV",
+    st.dataframe(valid_washes)
+    # total number of washes
+    st.markdown("Összes mosás száma: {}".format(valid_washes.shape[0]))
+    # total number of bonus washes
+    st.markdown("Összes bonus mosás száma: {}".format(round(valid_washes['bonus_mosasszam'].sum())))
+    # total commission
+    st.markdown("Összes jutalék: {} Ft".format(round(valid_washes['total_commision_price'].sum())))
+    st.download_button(label="Download data as CSV",
                         data=convert_df(valid_washes),
                         file_name='valid_washes.csv', mime='text/csv')
+    
+    st.markdown("## Mosó statisztika")
+    # count the number of washes per washer
+    washes_per_washer = valid_washes.groupby(['washer_name']).agg(
+        total_commision_price = ('total_commision_price', 'sum'),
+        mosas_db = ('id', 'count'),
+        mosas_bonus_db = ('bonus_mosasszam', 'sum')
+    ).reset_index(drop=False)
+
+    st.dataframe(washes_per_washer)
         
     st.markdown("## Levonasok")
 
@@ -182,7 +194,7 @@ def create_admin_view(authenticator, username, name, config):
             st.write(query_to_delete)
             st.write('Deduction deleted successfully')
 
-    st.markdown("## Bonus mosaszam frissitese")
+    st.markdown("## Bonus mosasszam frissitese")
     show_bonus_table = st.checkbox('Show bonus mosaszam table', value=False)
     if show_bonus_table:
         bonus_sql_query = "SELECT * FROM cleango.bi_bonus_mosasszam"
@@ -191,6 +203,7 @@ def create_admin_view(authenticator, username, name, config):
         st.download_button(label="Download data as CSV",
                         data=convert_df(bonus_data),
                         file_name='bonus_data.csv', mime='text/csv')
+        st.markdown('Toltsd le ezt a tablat, modositsd, majd toltsd fel ujra az ez alatt levo formmal.')
 
     with st.form(key='update_bonus_wash_count'):
         # upload a csv_file that contains the bonus mosaszam data
@@ -254,6 +267,8 @@ def create_washer_view(authenticator, username, name, config):
         with col2:
             # create a date filter called "date_to"
             date_to = st.date_input('End Date', value=pd.to_datetime(datetime.today().strftime('%Y-%m-%d')))
+            # add one day to the date_to
+            date_to = date_to + pd.DateOffset(days=1)
         
         # create a button
         submitted = st.form_submit_button('Szűrés')
@@ -302,7 +317,7 @@ def create_washer_view(authenticator, username, name, config):
 
         with col2:
             # total number of washes
-            st.markdown("Összes mosás száma bonus szerint: {}".format(round(valid_washes['bonus_mosasszam'].sum())))
+            st.markdown("Összes mosás száma bonus szerint: {}".format(round(valid_washes['bonus_mosasszam'].sum(), 2)))
         
         with col1:
             st.download_button(label="Adat letöltése",
@@ -319,8 +334,8 @@ def create_washer_view(authenticator, username, name, config):
         st.dataframe(deductions_data)
         # calculate total value of deduction
         total_deduction = deductions_data['value'].sum()
-        st.markdown("Összes levonás: {} Ft".format(round(total_deduction)))
+        st.markdown("Összes levonás: {} Ft".format(round(total_deduction), 2))
         st.markdown('Ha ez az összeg negatív, akkor a kivalasztott időszakban valamiért levonást kaptál. Ha pozitiv, akkor pedig a CleanGo tartozik neked ekkora összegget.')
         st.markdown('***')
         st.markdown("## Jutalek + Levonas")
-        st.markdown("Összes jutalék - Összes levonás: {} Ft".format(round(valid_washes['total_commision_price'].sum() + round(total_deduction))))
+        st.markdown("Összes jutalék - Összes levonás: {} Ft".format(round(valid_washes['total_commision_price'].sum() +total_deduction, 2)))

@@ -167,6 +167,8 @@ def create_admin_view(authenticator, username, name, config):
             conn.close()
             st.write(query_to_insert)
             st.write('Deduction added successfully')
+            # refresh the page
+            st.experimental_rerun()
 
     st.markdown("## Levonas torlese")
     with st.form(key='delete_deduction'):
@@ -179,6 +181,7 @@ def create_admin_view(authenticator, username, name, config):
             deduction_ids = np.insert(deduction_ids, 0, 'Select an ID')
             deduction_id = st.selectbox('Deduction ID', deduction_ids)
         delete_deduction = st.form_submit_button('Delete Deduction')
+
 
     if delete_deduction:
         if deduction_id == 'Select an ID':
@@ -194,6 +197,8 @@ def create_admin_view(authenticator, username, name, config):
             conn.close()
             st.write(query_to_delete)
             st.write('Deduction deleted successfully')
+            # refresh the page
+            st.experimental_rerun()
 
     st.markdown("## Bonus mosasszam frissitese")
     show_bonus_table = st.checkbox('Show bonus mosaszam table', value=False)
@@ -249,6 +254,9 @@ def create_admin_view(authenticator, username, name, config):
                     conn.commit()
                     cursor.close()
                     conn.close()
+                st.write('Table updated successfully')
+                # refresh the page
+                st.experimental_rerun()
                 
 
 

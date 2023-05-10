@@ -10,7 +10,11 @@ credentials:
       name: "Pető Sándor" # a moso neve
       password: "$2b$12$HHlz6RjxGUCzbweIU7Xe4uomzlNvLzmJgOnK4czwwM9bwNkZDXSVS" #hased password
       moso_db_name: "Pető Sándor EV" # ez ami a moso neve a DB-ben
-      
+    peto_sandor: 
+      email: nk@nk.hu
+      name: "Nagy Kristóf" 
+      password: "$2b$12$HHlz6RjxGUCzbweIU7Xe4uomzlNvLzmJgOnK4czwwM9bwNkZDXSVS" 
+      moso_db_name: "Nagy Kristóf EV"
     
 cookie:
   expiry_days: 0
